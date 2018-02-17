@@ -48,42 +48,7 @@ if [ ! -f "${setup}" ]; then
   else
     ln -s /etc/icinga2/features-available/livestatus.conf /etc/icinga2/features-enabled/livestatus.conf
   fi
-
-
-  ## The mariadb instance is installed and empty directories are created as part of the container. This section performs the mysql_secure_installation steps.
-  # Start up the mariadb instance:
-  mysqld_safe --basedir=/usr --nowatch
-  sleep 10
-
-  # Make sure that NOBODY can access the server without a password - to be updated with a variable for a password ***
-  #mysql -e "UPDATE mysql.user SET Password = PASSWORD('CHANGEME') WHERE User = 'root'"
-
-  # Kill the anonymous users
-  mysql -e "DROP USER ''@'localhost'"
-
-  # Because our hostname varies we'll use some Bash magic here.
-  mysql -e "DROP USER ''@'$(hostname)'"
-
-  # Kill off the demo database
-  mysql -e "DROP DATABASE test"
-
-  # Setting up the icinga database - need to change the icinga user password to use a variable at some point ***
-  (
-      echo "CREATE DATABASE IF NOT EXISTS icinga;"
-      echo "GRANT SELECT, INSERT, UPDATE, DELETE, DROP, CREATE VIEW, INDEX, EXECUTE ON icinga.* TO 'icinga'@'localhost' IDENTIFIED BY 'icinga';"
-      echo "quit"
-  ) |
-  mysql
-  mysql -f icinga < /usr/share/icinga2-ido-mysql/schema/mysql.sql
-
-  # Make our changes take effect
-  mysql -e "FLUSH PRIVILEGES"
-
-  # Any subsequent tries to run queries this way will get access denied because lack of usr/pwd param
-  # Stop the MariaDB, as it will be controlled via supervisord
-  kill `pgrep mysqld`
-
-
+  
   ## Initialising the icingaweb2 configuration
 #  if [[ -L /etc/icingaweb2 ]]; then
 #    echo "Icinga2 web configuration directory already exists...skipping"
@@ -95,9 +60,9 @@ if [ ! -f "${setup}" ]; then
 
   # Configure the PHP timezone correctly:
   if [ "$PHP_TZ_CITY" = "" ]; then
-    sed -i "s/;date.timezone =/date.timezone = ${PHP_TZ_CONT}/" /etc/php.ini
+    sed -i "s/;date.timezone =/date.timezone = ${PHP_TZ_CONT}/" /etc/opt/rh/rh-php71/php.ini
   else
-    sed -i "s/;date.timezone =/date.timezone = ${PHP_TZ_CONT}\/${PHP_TZ_CITY}/" /etc/php.ini
+    sed -i "s/;date.timezone =/date.timezone = ${PHP_TZ_CONT}\/${PHP_TZ_CITY}/" /etc/opt/rh/rh-php71/php.ini
   fi
 
 # Mark the setup as complete
